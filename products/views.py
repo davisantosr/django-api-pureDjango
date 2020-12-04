@@ -1,16 +1,35 @@
-from django.shortcuts import render
-from django.views.generic.detail import DetailView
-from django.views.generic.list import ListView
+from django.http import JsonResponse
 
 from .models import Manufacturer, Product
 
+def product_list(request):
+  products = Product.objects.all() #[:30]slice avaliable
+  data = {"products": list(products.values())}  #values("pk", "name")
+  response = JsonResponse(data)
 
+  return response
 
-class ProductDetailView(DetailView):
-  model = Product
-  template_name = "products/product_detail.html"
+def product_detail(request, pk):
+  try:
+    product = Product.objects.get(pk=pk)
+    data = { 
+      "product": {
+        "name": product.name,
+        "manufacturer": product.manufacturer.name,
+        "description": product.description,
+        "photo": product.photo.url,
+        "price": product.price,
+        "shipping_cost": product.shipping_cost,
+        "quantity": product.quantity,  
+    }}
 
-class ProductListView(ListView):
-  model = Product
-  template_name = "products/product_list.html"
+    response = JsonResponse(data)
+  except Product.DoesNotExist:
+    response = JsonResponse({
+      "error": {
+        "code": 404,
+        "message": "Product not found"
+      }
+    }, status=404)
 
+  return response
